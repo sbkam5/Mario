@@ -14,7 +14,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private Player player;
     private Point playerPoint;
     private int width;
-    private int length;
+    private int height;
+    private boolean moving_left = false, moving_right = false;
+    private int jumping = 0;
 
     public Boardview(Context c) {
         super(c);
@@ -31,6 +33,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     @Override
     public void surfaceCreated(SurfaceHolder holder){
+        Canvas c = holder.lockCanvas();
+        width = c.getWidth();
+        height = c.getHeight();
+        holder.unlockCanvasAndPost(c);
+
         thread = new GameThread(holder, this);
         thread.setRunning(true);
         thread.start();
@@ -58,10 +65,32 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     @Override
     public boolean onTouchEvent(MotionEvent e){
-        switch (e.getAction()){
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
-                playerPoint.set((int)e.getX(), (int)e.getY());
+        int tempx = (int)e.getX();
+        int tempy = (int)e.getY();
+        if( e.getAction() == MotionEvent.ACTION_DOWN){
+            if (tempx < width / 2 && tempy > height / 2) {
+                if(moving_left){   //if already moving left, stop them.
+                    moving_left = false;
+                    moving_right = false;
+                }
+                else{
+                    moving_left = true;  //otherwise allow them to move left.
+                    moving_right = false;
+                }
+            }
+            else if (tempx > width / 2 && tempy > height / 2) {
+                if(moving_right){   //if already moving right, stop.
+                    moving_right = false;
+                    moving_left = false;
+                }
+                else{
+                    moving_right = true;   //else allow move right.
+                    moving_left = false;
+                }
+            }
+            else if(jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
+                jumping = 1;
+            }
         }
 
         return true;
@@ -77,6 +106,26 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     public void update(){
+        if(moving_right){
+            playerPoint.x += 10;   //if moving right, increment right
+        }
+        else if(moving_left){
+            playerPoint.x -= 10;   //if moving left, decrement x.
+        }
+
+        if(jumping == 1){
+            playerPoint.y -= 10;   //if rising during a jump, decrement y.
+            if(playerPoint.y <= 300){
+                jumping = 2;
+            }
+        }
+        else{
+            playerPoint.y += 10;   //otherwise, gravity is always acting upon the character.
+            if (playerPoint.y + player.getHeight()/2 >= height){
+                playerPoint.y = height - (player.getHeight())/2;  //if y is too high, it means character is already grounded.
+                jumping = 0;  //also player can do jump command again.
+            }
+        }
         player.update(playerPoint.x, playerPoint.y);
     }
 }

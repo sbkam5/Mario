@@ -31,6 +31,10 @@ public class Player implements GameObject {
         return loc;
     }
 
+    public int getHeight(){
+        return height;
+    }
+
     public void update(int x, int y){
         this.x = x - width/2;
         this.y = y - height/2;
