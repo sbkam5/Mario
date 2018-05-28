@@ -3,7 +3,9 @@ package edu.uci.assignment4;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -12,11 +14,15 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     private GameThread thread;
     private Player player;
+    private Goomba goomba;
     private Point playerPoint;
     private int width;
     private int height;
     private boolean moving_left = false, moving_right = false;
     private int jumping = 0;
+    private int score = 0;
+    private int lives = 3;
+    private Paint paint = new Paint();
 
     public Boardview(Context c) {
         super(c);
@@ -24,9 +30,13 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         thread = new GameThread(getHolder(), this);
 
         player = new Player(c);
+        goomba = new Goomba(c);
         playerPoint = new Point();
         playerPoint.x = 300;
         playerPoint.y = 300;
+
+        paint.setColor(Color.BLACK);  //paint for text
+        paint.setTextSize(100);
 
         setFocusable(true);  //Important. For some reason
     }
@@ -37,6 +47,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         width = c.getWidth();
         height = c.getHeight();
         holder.unlockCanvasAndPost(c);
+
+        goomba.set_y(height);
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
@@ -103,6 +115,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         canvas.drawColor(Color.WHITE);
 
         player.draw(canvas);
+        if(goomba != null) {  //if goomba isn't dead, draw it too
+            goomba.draw(canvas);
+        }
+
+        canvas.drawText("Score: " + score, 0, 100, paint);
+        canvas.drawText("Lives: " + lives, 1000, 100, paint);
     }
 
     public void update(){
@@ -127,5 +145,15 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             }
         }
         player.update(playerPoint.x, playerPoint.y);
+        if(goomba != null) {  //if goomba isnt dead, update goomba
+            goomba.update(playerPoint.x);
+
+            if(Rect.intersects(player.getLocation(), goomba.getLocation())){  //check to see if goomba and plyaer will intersect
+                if(goomba.killedByPlayer(player)){            //if player and goomba intersect, check to see if goomba dies.
+                    goomba = null;
+                    score += 100;
+                }
+            }
+        }
     }
 }

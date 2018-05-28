@@ -35,6 +35,18 @@ public class Player implements GameObject {
         return height;
     }
 
+    public int getWidth(){
+        return width;
+    }
+
+    public int getX(){
+        return x;
+    }
+
+    public int getY(){
+        return y;
+    }
+
     public void update(int x, int y){
         this.x = x - width/2;
         this.y = y - height/2;
@@ -48,9 +60,6 @@ public class Player implements GameObject {
 
     @Override
     public void draw(Canvas canvas){
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
-
         canvas.drawBitmap(pic, null, loc, null);
     }
 }
