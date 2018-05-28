@@ -13,19 +13,24 @@ import android.view.SurfaceView;
 public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     private GameThread thread;
+    public Context context;
     private Player player;
     private Goomba goomba;
     private Point playerPoint;
-    private int width;
+    private int width;                  //width and height of canvas
     private int height;
-    private boolean moving_left = false, moving_right = false;
-    private int jumping = 0;
+    private boolean moving_left = false, moving_right = false, gameover =false;
+    private int jumping = 0;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
     private int score = 0;
     private int lives = 3;
+    private long gameOverTime;
     private Paint paint = new Paint();
 
     public Boardview(Context c) {
         super(c);
+
+        context = c;  //get the context of mainactivity to help with resetting dead enemies.
+
         getHolder().addCallback(this); //notify surface holder that you would like to receive Surfaceholder callbacks
         thread = new GameThread(getHolder(), this);
 
@@ -48,11 +53,22 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         height = c.getHeight();
         holder.unlockCanvasAndPost(c);
 
-        goomba.set_y(height);
+        goomba.setLocation(1000, height - goomba.getHeight());
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
         thread.start();
+    }
+
+    public void reset(){
+        playerPoint.x = 300;
+        playerPoint.y = 300;
+        moving_left = false;
+        moving_right = false;
+        jumping = 0;
+
+        goomba = new Goomba(context);
+        goomba.setLocation(1000, height - goomba.getHeight());
     }
 
     @Override
@@ -79,29 +95,34 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     public boolean onTouchEvent(MotionEvent e){
         int tempx = (int)e.getX();
         int tempy = (int)e.getY();
-        if( e.getAction() == MotionEvent.ACTION_DOWN){
-            if (tempx < width / 2 && tempy > height / 2) {
-                if(moving_left){   //if already moving left, stop them.
-                    moving_left = false;
-                    moving_right = false;
-                }
-                else{
-                    moving_left = true;  //otherwise allow them to move left.
-                    moving_right = false;
+        if(!gameover) {
+            if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                if (tempx < width / 2 && tempy > height / 2) {
+                    if (moving_left) {   //if already moving left, stop them.
+                        moving_left = false;
+                        moving_right = false;
+                    } else {
+                        moving_left = true;  //otherwise allow them to move left.
+                        moving_right = false;
+                    }
+                } else if (tempx > width / 2 && tempy > height / 2) {
+                    if (moving_right) {   //if already moving right, stop.
+                        moving_right = false;
+                        moving_left = false;
+                    } else {
+                        moving_right = true;   //else allow move right.
+                        moving_left = false;
+                    }
+                } else if (jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
+                    jumping = 1;
                 }
             }
-            else if (tempx > width / 2 && tempy > height / 2) {
-                if(moving_right){   //if already moving right, stop.
-                    moving_right = false;
-                    moving_left = false;
-                }
-                else{
-                    moving_right = true;   //else allow move right.
-                    moving_left = false;
-                }
-            }
-            else if(jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
-                jumping = 1;
+        }
+        else{  //if it is a gameover and has been 2 seconds, clicking will reset the game.
+            long x = System.currentTimeMillis();
+            if(e.getAction() == MotionEvent.ACTION_DOWN) {
+                reset();
+                gameover = false;
             }
         }
 
@@ -114,13 +135,20 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
         canvas.drawColor(Color.WHITE);
 
-        player.draw(canvas);
-        if(goomba != null) {  //if goomba isn't dead, draw it too
-            goomba.draw(canvas);
+        if(!gameover) {
+            player.draw(canvas);
+            if (goomba != null) {  //if goomba isn't dead, draw it too
+                goomba.draw(canvas);
+            }
+
+            canvas.drawText("Score: " + score, 0, 100, paint);
+            canvas.drawText("Lives: " + lives, 1000, 100, paint);
+        }
+        else{
+            canvas.drawText("Game Over", width/2-100, height/2 + 50, paint);
         }
 
-        canvas.drawText("Score: " + score, 0, 100, paint);
-        canvas.drawText("Lives: " + lives, 1000, 100, paint);
+
     }
 
     public void update(){
@@ -152,6 +180,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 if(goomba.killedByPlayer(player)){            //if player and goomba intersect, check to see if goomba dies.
                     goomba = null;
                     score += 100;
+                }
+                else{    //if player dies, game is over and must be reset.
+                    gameover = true;
                 }
             }
         }

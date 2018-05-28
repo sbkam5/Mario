@@ -23,13 +23,18 @@ public class Goomba implements GameObject {
         loc = new Rect(x, y, x + width, y + height);
     }
 
-    public void set_y(int c_height){
-        y = c_height - height;
-        loc = new Rect(x, y, x + width, y + height);
+    public int getHeight(){
+        return  height;
     }
 
     public Rect getLocation(){
         return loc;
+    }
+
+    public void setLocation(int x, int y){
+        this.x = x;
+        this.y = y;
+        loc.set(x, y, x + width, y + height);
     }
 
     public void update(int player_x){
