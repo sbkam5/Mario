@@ -2,9 +2,10 @@ package edu.uci.assignment4;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 
-public class Obstacle implements GameObject {
+public class Obstacle{
 
     private Rect shape;
     private int color;
@@ -18,17 +19,32 @@ public class Obstacle implements GameObject {
         return shape;
     }
 
-    public boolean playerCollide(Player p){
-        if(shape.contains(p.getLocation().left, p.getLocation().top)
-                || shape.contains(p.getLocation().right, p.getLocation().top)
-                || shape.contains(p.getLocation().left,  p.getLocation().bottom)
-                || shape.contains(p.getLocation().right, p.getLocation().bottom)){
+    public Point playerCollide(Player p, Rect obstacle, Point point){
+        Point temp = point;
+        int xFinal = obstacle.right;
+        int yFinal = obstacle.bottom;
 
-            return true;  //if the obstacle contains any portion of the player, a collision occurs and return true
+        int deltaX = Math.abs((p.getX() + p.getWidth())  - xFinal);
+        int deltaY = Math.abs((p.getY() + p.getHeight()) - yFinal);
 
+        if(deltaY <= deltaX){
+            if (deltaX < 0) { //player is to left of object
+                temp.x -= 10;  //if the player runs into obstacle from the side.
+            }
+            else{
+                temp.x += 10;
+            }
+        }
+        else{
+            if(deltaY < 0){  //player is on top of object
+                temp.y -= 10;
+            }
+            else{
+                temp.y += 10;
+            }
         }
 
-        return false;  //otherwise return false to signal no collision.
+        return temp;
     }
 
     public void draw(Canvas canvas){

@@ -14,8 +14,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     private GameThread thread;
     public Context context;
-    private Player player;
+    private Player player;          //characters
     private Goomba goomba;
+    private Plant plant;
     private Point playerPoint;
     private int width;                  //width and height of canvas
     private int height;
@@ -23,7 +24,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private int jumping = 0;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
     private int score = 0;
     private int lives = 3;
-    private long gameOverTime;
+    private long gameTime;
     private Paint paint = new Paint();
 
     public Boardview(Context c) {
@@ -34,8 +35,10 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         getHolder().addCallback(this); //notify surface holder that you would like to receive Surfaceholder callbacks
         thread = new GameThread(getHolder(), this);
 
-        player = new Player(c);
-        goomba = new Goomba(c);
+        player = new Player(c);  //initialize characters
+        //goomba = new Goomba(c);
+        goomba = null;
+        plant = new Plant(c);
         playerPoint = new Point();
         playerPoint.x = 300;
         playerPoint.y = 300;
@@ -53,7 +56,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         height = c.getHeight();
         holder.unlockCanvasAndPost(c);
 
-        goomba.setLocation(1000, height - goomba.getHeight());
+        //goomba.setLocation(1000, height - goomba.getHeight());
+        plant.setLocation(1000, height - plant.getPotHeight());
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
@@ -140,6 +144,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             if (goomba != null) {  //if goomba isn't dead, draw it too
                 goomba.draw(canvas);
             }
+            if(plant != null) {
+                plant.draw(canvas);
+            }
 
             canvas.drawText("Score: " + score, 0, 100, paint);
             canvas.drawText("Lives: " + lives, 1000, 100, paint);
@@ -173,10 +180,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             }
         }
         player.update(playerPoint.x, playerPoint.y);
+
         if(goomba != null) {  //if goomba isnt dead, update goomba
             goomba.update(playerPoint.x);
 
-            if(Rect.intersects(player.getLocation(), goomba.getLocation())){  //check to see if goomba and plyaer will intersect
+            if(Rect.intersects(player.getLocation(), goomba.getLocation())){  //check to see if goomba and player will intersect
                 if(goomba.killedByPlayer(player)){            //if player and goomba intersect, check to see if goomba dies.
                     goomba = null;
                     score += 100;
@@ -184,6 +192,30 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 else{    //if player dies, game is over and must be reset.
                     gameover = true;
                 }
+            }
+        }
+
+        if(plant != null) {
+            if(plant.getState() == 3) {
+                gameTime = System.nanoTime()/1000000;
+                plant.update();  //tell plant we have the time it BEGAN to wait.
+            }
+            else if(plant.getState() == 0) {  //if plant hasnt waited long enough, it isnt updated
+                if (System.nanoTime() / 1000000 - gameTime >= 5000) {
+                    plant.update();
+                }
+            }
+            else{
+                plant.update();
+            }
+
+            if(Rect.intersects(player.getLocation(), plant.getPot())){  //if player is about to interect pot, limit his movements.
+                playerPoint = plant.playerCollide(player, plant.getPot(), playerPoint);
+                player.update(playerPoint.x, playerPoint.y);
+            }
+
+            if(Rect.intersects(player.getLocation(), plant.getLocation())){  //check to see if plant and player will intersect
+                    gameover = true;
             }
         }
     }
