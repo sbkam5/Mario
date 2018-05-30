@@ -17,11 +17,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private Player player;          //characters
     private Goomba goomba;
     private Plant plant;
-    private Point playerPoint;
+    private Obstacle obstacle;
+    private Point playerPoint;           //player coordinates.
     private int width;                  //width and height of canvas
     private int height;
     private boolean moving_left = false, moving_right = false, gameover =false;
-    private int jumping = 0;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
+    private int jumping = 0, jumpDistance;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
     private int score = 0;
     private int lives = 3;
     private long gameTime;
@@ -38,7 +39,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         player = new Player(c);  //initialize characters
         //goomba = new Goomba(c);
         goomba = null;
-        plant = new Plant(c);
+        //plant = new Plant(c);
+        plant = null;
+
+        obstacle = new Obstacle();
+
         playerPoint = new Point();
         playerPoint.x = 300;
         playerPoint.y = 300;
@@ -57,7 +62,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         holder.unlockCanvasAndPost(c);
 
         //goomba.setLocation(1000, height - goomba.getHeight());
-        plant.setLocation(1000, height - plant.getPotHeight());
+        //plant.setLocation(1000, height - plant.getPotHeight());
+        obstacle.setShape(500,500, 1000, 50);
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
@@ -119,11 +125,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     }
                 } else if (jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
                     jumping = 1;
+                    jumpDistance = playerPoint.y - 500;
                 }
             }
         }
         else{  //if it is a gameover and has been 2 seconds, clicking will reset the game.
-            long x = System.currentTimeMillis();
             if(e.getAction() == MotionEvent.ACTION_DOWN) {
                 reset();
                 gameover = false;
@@ -147,6 +153,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             if(plant != null) {
                 plant.draw(canvas);
             }
+            if(obstacle != null) {
+                obstacle.draw(canvas);
+            }
 
             canvas.drawText("Score: " + score, 0, 100, paint);
             canvas.drawText("Lives: " + lives, 1000, 100, paint);
@@ -159,6 +168,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     public void update(){
+        //behavior of player object
         if(moving_right){
             playerPoint.x += 10;   //if moving right, increment right
         }
@@ -168,8 +178,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
         if(jumping == 1){
             playerPoint.y -= 10;   //if rising during a jump, decrement y.
-            if(playerPoint.y <= 300){
-                jumping = 2;
+            if(playerPoint.y <= jumpDistance){
+                jumping = 2;   //once player reaches max height, start falling state.
             }
         }
         else{
@@ -181,6 +191,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         }
         player.update(playerPoint.x, playerPoint.y);
 
+        //behavior of goomba object
         if(goomba != null) {  //if goomba isnt dead, update goomba
             goomba.update(playerPoint.x);
 
@@ -195,6 +206,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             }
         }
 
+        //behavior of plant object
         if(plant != null) {
             if(plant.getState() == 3) {
                 gameTime = System.nanoTime()/1000000;
@@ -209,13 +221,32 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 plant.update();
             }
 
-            if(Rect.intersects(player.getLocation(), plant.getPot())){  //if player is about to interect pot, limit his movements.
-                playerPoint = plant.playerCollide(player, plant.getPot(), playerPoint);
+            if(Rect.intersects(player.getLocation(), plant.getPot())){  //if player is about to intersect pot, limit his movements.
+                int collisionType = plant.playerCollide(player, plant.getPot(), playerPoint);
+                if(collisionType == 2){  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
+                    jumping = 0;
+                }
+                else if(collisionType == 3){
+                    jumping = 2;
+                }
                 player.update(playerPoint.x, playerPoint.y);
             }
 
             if(Rect.intersects(player.getLocation(), plant.getLocation())){  //check to see if plant and player will intersect
                     gameover = true;
+            }
+        }
+
+        if(obstacle != null){
+            if(Rect.intersects(player.getLocation(), obstacle.getLoc())){
+                int collisionType = obstacle.playerCollide(player, obstacle.getLoc(), playerPoint);
+                if(collisionType == 2){  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
+                    jumping = 0;
+                }
+                else if(collisionType == 3){
+                    jumping = 2;
+                }
+                player.update(playerPoint.x, playerPoint.y);
             }
         }
     }
