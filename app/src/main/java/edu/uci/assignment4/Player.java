@@ -27,6 +27,20 @@ public class Player implements GameObject {
         loc = new Rect(x, y, x + width, y + height);
     }
 
+    public void setLocation(int x, int y){
+        this.x = x;
+        this.y = y;
+        loc.set(x, y, x + width, y + height);
+    }
+
+    public void moveLeft(){
+        //does nothing
+    }
+
+    public void moveRight(){
+        //does nothing
+    }
+
     public Rect getLocation(){
         return loc;
     }

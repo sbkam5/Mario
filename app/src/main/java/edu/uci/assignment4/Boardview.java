@@ -15,9 +15,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private GameThread thread;
     public Context context;
     private Player player;          //characters
-    private Goomba goomba;
-    private Plant plant;
-    private Obstacle obstacle;
+    private GameObject enemies[] = new GameObject[10];
+    private Obstacle obstacles[] = new Obstacle[10];
     private Point playerPoint;           //player coordinates.
     private int width;                  //width and height of canvas
     private int height;
@@ -37,12 +36,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         thread = new GameThread(getHolder(), this);
 
         player = new Player(c);  //initialize characters
-        //goomba = new Goomba(c);
-        goomba = null;
-        //plant = new Plant(c);
-        plant = null;
+        enemies[0] = new Plant(c);
 
-        obstacle = new Obstacle();
+        obstacles[0] = new Obstacle();
 
         playerPoint = new Point();
         playerPoint.x = 300;
@@ -61,9 +57,17 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         height = c.getHeight();
         holder.unlockCanvasAndPost(c);
 
-        //goomba.setLocation(1000, height - goomba.getHeight());
-        //plant.setLocation(1000, height - plant.getPotHeight());
-        obstacle.setShape(500,500, 1000, 50);
+        for(GameObject enemy: enemies){
+            if(enemy instanceof Goomba){
+                Goomba goomba = (Goomba)enemy;
+                goomba.setLocation(1000, height - goomba.getHeight());
+            } else if (enemy instanceof Plant) {
+                Plant plant = (Plant)enemy;
+                plant.setLocation(1000, height - plant.getPotHeight());
+            }
+        }
+
+        obstacles[0].setShape(500,500, 500, 50);
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
@@ -77,8 +81,6 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         moving_right = false;
         jumping = 0;
 
-        goomba = new Goomba(context);
-        goomba.setLocation(1000, height - goomba.getHeight());
     }
 
     @Override
@@ -147,14 +149,15 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
         if(!gameover) {
             player.draw(canvas);
-            if (goomba != null) {  //if goomba isn't dead, draw it too
-                goomba.draw(canvas);
+            for(GameObject enemy : enemies){
+                if(enemy != null){
+                    enemy.draw(canvas);
+                }
             }
-            if(plant != null) {
-                plant.draw(canvas);
-            }
-            if(obstacle != null) {
-                obstacle.draw(canvas);
+            for(Obstacle obstacle : obstacles) {
+                if (obstacle != null) {
+                    obstacle.draw(canvas);
+                }
             }
 
             canvas.drawText("Score: " + score, 0, 100, paint);
@@ -169,84 +172,132 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     public void update(){
         //behavior of player object
-        if(moving_right){
-            playerPoint.x += 10;   //if moving right, increment right
-        }
-        else if(moving_left){
-            playerPoint.x -= 10;   //if moving left, decrement x.
-        }
-
-        if(jumping == 1){
+        if (jumping == 1) {
             playerPoint.y -= 10;   //if rising during a jump, decrement y.
-            if(playerPoint.y <= jumpDistance){
+            if (playerPoint.y <= jumpDistance) {
                 jumping = 2;   //once player reaches max height, start falling state.
             }
         }
-        else{
+        else {
             playerPoint.y += 10;   //otherwise, gravity is always acting upon the character.
-            if (playerPoint.y + player.getHeight()/2 >= height){
-                playerPoint.y = height - (player.getHeight())/2;  //if y is too high, it means character is already grounded.
-                jumping = 0;  //also player can do jump command again.
-            }
+        }
+        if(playerPoint.y + player.getHeight() / 2 >= height) {
+            playerPoint.y = height - (player.getHeight()) / 2;  //if y is too high, it means character is already grounded.
+            jumping = 0;  //also player can do jump command again.
+        }
+
+        if(moving_left){
+            playerPoint.x -= 10;
+        }
+        else if(moving_right){
+            playerPoint.x += 10;   //these movements in the x - direction will be used to obstacle collision check
         }
         player.update(playerPoint.x, playerPoint.y);
 
-        //behavior of goomba object
-        if(goomba != null) {  //if goomba isnt dead, update goomba
-            goomba.update(playerPoint.x);
-
-            if(Rect.intersects(player.getLocation(), goomba.getLocation())){  //check to see if goomba and player will intersect
-                if(goomba.killedByPlayer(player)){            //if player and goomba intersect, check to see if goomba dies.
-                    goomba = null;
-                    score += 100;
-                }
-                else{    //if player dies, game is over and must be reset.
-                    gameover = true;
+        //behavior of obstacles
+        for(Obstacle obstacle: obstacles) {
+            if(obstacle != null) {
+                if (Rect.intersects(player.getLocation(), obstacle.getLocation())) {
+                    int collisionType = obstacle.playerCollide(player, obstacle.getLocation(), playerPoint);
+                    if (collisionType == 1) {
+                        moving_right = false;
+                        moving_left = false;
+                    } else if (collisionType == 2) {  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
+                        jumping = 0;
+                    } else if (collisionType == 3) {
+                        jumping = 2;
+                    }
+                    player.update(playerPoint.x, playerPoint.y);
                 }
             }
         }
 
-        //behavior of plant object
-        if(plant != null) {
-            if(plant.getState() == 3) {
-                gameTime = System.nanoTime()/1000000;
-                plant.update();  //tell plant we have the time it BEGAN to wait.
-            }
-            else if(plant.getState() == 0) {  //if plant hasnt waited long enough, it isnt updated
-                if (System.nanoTime() / 1000000 - gameTime >= 5000) {
-                    plant.update();
+        //Plant pots behave as obstacles too
+        for(int i = 0; i < 10; i++){
+            if(enemies[i] instanceof Plant){
+                Plant plant = (Plant)enemies[i];
+                if (Rect.intersects(player.getLocation(), plant.getPot())) {  //if player is about to intersect pot, limit his movements.
+                    int collisionType = plant.playerCollide(player, plant.getPot(), playerPoint);
+                    if(collisionType == 1){
+                        moving_left = false;
+                        moving_right = false;
+                    }
+                    else if (collisionType == 2) {  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
+                        jumping = 0;
+                    } else if (collisionType == 3) {
+                        jumping = 2;
+                    }
+                    player.update(playerPoint.x, playerPoint.y);
                 }
-            }
-            else{
-                plant.update();
-            }
-
-            if(Rect.intersects(player.getLocation(), plant.getPot())){  //if player is about to intersect pot, limit his movements.
-                int collisionType = plant.playerCollide(player, plant.getPot(), playerPoint);
-                if(collisionType == 2){  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
-                    jumping = 0;
-                }
-                else if(collisionType == 3){
-                    jumping = 2;
-                }
-                player.update(playerPoint.x, playerPoint.y);
-            }
-
-            if(Rect.intersects(player.getLocation(), plant.getLocation())){  //check to see if plant and player will intersect
-                    gameover = true;
             }
         }
 
-        if(obstacle != null){
-            if(Rect.intersects(player.getLocation(), obstacle.getLoc())){
-                int collisionType = obstacle.playerCollide(player, obstacle.getLoc(), playerPoint);
-                if(collisionType == 2){  //if the y coordinate of the player was decremented back down, it means player is on top of an object.
-                    jumping = 0;
+        if(moving_left){
+            playerPoint.x += 10;
+        }
+        else if(moving_right){
+            playerPoint.x -= 10;   //these movements in the x - direction will be used to obstacle collision check
+        }
+        player.update(playerPoint.x, playerPoint.y);
+
+        for(Obstacle obstacle: obstacles) {
+            if (obstacle != null) {  //if character is supposed to be moving, move the obstacles.
+                if (moving_left) {
+                    obstacle.moveRight();
+                } else if (moving_right) {
+                    obstacle.moveLeft();
                 }
-                else if(collisionType == 3){
-                    jumping = 2;
+            }
+        }
+
+        //behavior of enemy objects
+        for(int i = 0; i < 10; i++) {
+            if(enemies[i] != null) {  //for all enemies.
+                if (moving_right) {
+                    enemies[i].moveLeft();
+                } else if (moving_left) {
+                    enemies[i].moveRight();
                 }
-                player.update(playerPoint.x, playerPoint.y);
+            }
+
+            if(enemies[i] instanceof Goomba) {
+                Goomba goomba = (Goomba)enemies[i];
+                if (goomba != null) {  //if goomba isnt dead, update goomba
+
+                    goomba.update(playerPoint.x);
+
+                    if (Rect.intersects(player.getLocation(), goomba.getLocation())) {  //check to see if goomba and player will intersect
+                        if (goomba.killedByPlayer(player)) {            //if player and goomba intersect, check to see if goomba dies.
+                            enemies[i] = null;
+                            score += 100;
+                        } else {    //if player dies, game is over and must be reset.
+                            gameover = true;
+                            lives--;
+                        }
+                    }
+                }
+            }
+
+            //behavior of plant object
+            if(enemies[i] instanceof Plant) {
+                Plant plant = (Plant)enemies[i];
+                if (plant != null) {
+                    if (plant.getState() == 3) {
+                        gameTime = System.nanoTime() / 1000000;
+                        plant.update();  //tell plant we have the time it BEGAN to wait.
+                    } else if (plant.getState() == 0) {  //if plant hasnt waited long enough, it isnt updated
+                        if (System.nanoTime() / 1000000 - gameTime >= 5000) {
+                            plant.update();
+                        }
+                    } else {
+                        plant.update();
+                    }
+
+                    if (Rect.intersects(player.getLocation(), plant.getLocation())) {  //check to see if plant and player will intersect
+                        gameover = true;
+                        lives--;
+                    }
+                }
             }
         }
     }

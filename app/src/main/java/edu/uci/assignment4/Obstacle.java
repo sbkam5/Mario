@@ -6,9 +6,10 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 
-public class Obstacle{
+public class Obstacle implements GameObject{
 
     private Rect shape;
+    private int x, y, width, height;
     private Paint paint = new Paint();
 
     public Obstacle(){
@@ -17,10 +18,28 @@ public class Obstacle{
     }
 
     public void setShape(int x, int y, int width, int height){
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
         shape.set(x, y, x+width, y+height);
     }
 
-    public Rect getLoc(){
+    public void setLocation(int x, int y){
+        //does nothing
+    }
+
+    public void moveRight(){
+        x += 10;
+        shape.set(x, y, x + width, y + height);
+    }
+
+    public void moveLeft(){
+        x -= 10;
+        shape.set(x, y, x + width, y + height);
+    }
+
+    public Rect getLocation(){
         return shape;
     }
 
@@ -47,12 +66,7 @@ public class Obstacle{
         }
 
         if(Math.abs(horizontalMin) <= Math.abs(verticalMin)){
-            if (horizontalSide == 2) { //player is to left of object
-                point.x -= 10;
-            }
-            else{
-                point.x += 10;
-            }
+
             return 1;  //lets boardview know this intersection occured from the sides.
         }
         else{

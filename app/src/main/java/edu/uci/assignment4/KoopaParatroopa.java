@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
-public class KoopaParatroopa implements GameObject {
+/*public class KoopaParatroopa implements GameObject {
     protected Bitmap winged;
     protected Bitmap wingless;
     protected Bitmap shell;
@@ -71,4 +71,4 @@ public class KoopaParatroopa implements GameObject {
 
 
 
-}
+}*/
