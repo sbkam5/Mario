@@ -72,8 +72,8 @@ public class Plant implements GameObject {
     }
 
     public void draw(Canvas canvas){
-        canvas.drawRect(pot.left, pot.top, pot.right, pot.bottom, paint);
         canvas.drawBitmap(head, null, loc, null);
+        canvas.drawRect(pot.left, pot.top, pot.right, pot.bottom, paint);
     }
 
     public void update(){
@@ -123,12 +123,7 @@ public class Plant implements GameObject {
         }
 
         if(Math.abs(horizontalMin) <= Math.abs(verticalMin)){
-            /*if (horizontalSide == 2) { //player is to left of object
-                point.x -= 10;
-            }
-            else{
-                point.x += 10;
-            }*/
+
             return 1;  //lets boardview know this intersection occured from the sides.
         }
         else{

@@ -15,6 +15,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private GameThread thread;
     public Context context;
     private Player player;          //characters
+    private int playerState = 0;  //0 = normal mario, 1 = fire mario, 2 = super mario
     private GameObject enemies[] = new GameObject[10];
     private Obstacle obstacles[] = new Obstacle[10];
     private Point playerPoint;           //player coordinates.
@@ -27,6 +28,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private long gameTime;
     private Paint paint = new Paint();
 
+    private Rect fireball = null;
+    Rect button = new Rect(); //for when mario is in fire mode
+    int playerDirection = 0;
+    int fireDirection = 0;
+
     public Boardview(Context c) {
         super(c);
 
@@ -36,13 +42,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         thread = new GameThread(getHolder(), this);
 
         player = new Player(c);  //initialize characters
-        enemies[0] = new Plant(c);
-
-        obstacles[0] = new Obstacle();
-
-        playerPoint = new Point();
-        playerPoint.x = 300;
-        playerPoint.y = 300;
+        //enemies[0] = new Goomba(c);
+        obstacles[0] = new FireFlower(c);
 
         paint.setColor(Color.BLACK);  //paint for text
         paint.setTextSize(100);
@@ -55,19 +56,26 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         Canvas c = holder.lockCanvas();
         width = c.getWidth();
         height = c.getHeight();
+
+        playerPoint = new Point();
+        playerPoint.x = width/2;
+        playerPoint.y = 300;
+
+        button.set(width/2 - 200, 0, width/2 + 200, 100);
+
         holder.unlockCanvasAndPost(c);
 
         for(GameObject enemy: enemies){
             if(enemy instanceof Goomba){
                 Goomba goomba = (Goomba)enemy;
-                goomba.setLocation(1000, height - goomba.getHeight());
+                goomba.setLocation(1500, height - goomba.getHeight());
             } else if (enemy instanceof Plant) {
                 Plant plant = (Plant)enemy;
-                plant.setLocation(1000, height - plant.getPotHeight());
+                plant.setLocation(1500, height - plant.getPotHeight());
             }
         }
 
-        obstacles[0].setShape(500,500, 500, 50);
+        obstacles[0].setLocation(1500,500);
 
         thread = new GameThread(holder, this);
         thread.setRunning(true);
@@ -80,7 +88,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         moving_left = false;
         moving_right = false;
         jumping = 0;
-
+        score = 0;
     }
 
     @Override
@@ -116,6 +124,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     } else {
                         moving_left = true;  //otherwise allow them to move left.
                         moving_right = false;
+                        playerDirection = 1;
+                        if(playerDirection != player.getDirection()){
+                            player.setDirection(playerDirection);
+                            player.flip(playerPoint.x, playerPoint.y);
+                        }
                     }
                 } else if (tempx > width / 2 && tempy > height / 2) {
                     if (moving_right) {   //if already moving right, stop.
@@ -124,8 +137,19 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     } else {
                         moving_right = true;   //else allow move right.
                         moving_left = false;
+                        playerDirection = 0;
+                        if(playerDirection != player.getDirection()){
+                            player.setDirection(playerDirection);
+                            player.flip(playerPoint.x, playerPoint.y);
+                        }
                     }
-                } else if (jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
+                } else if(playerState == 1 && tempx > width/2 - 200 && tempx < width/2 + 200 && tempy < 100){
+                    if(fireball == null){
+                        fireball = new Rect();
+                        fireball.set(playerPoint.x, playerPoint.y, playerPoint.x + 50, playerPoint.y + 50);
+                        fireDirection = playerDirection;
+                    }
+                }else if (jumping == 0) {    //if not jumping(jumping = 1 or 2), allow person to jump up.
                     jumping = 1;
                     jumpDistance = playerPoint.y - 500;
                 }
@@ -147,6 +171,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
         canvas.drawColor(Color.WHITE);
 
+
         if(!gameover) {
             player.draw(canvas);
             for(GameObject enemy : enemies){
@@ -160,8 +185,18 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 }
             }
 
+            if(playerState == 1){
+                paint.setColor(Color.RED);
+                canvas.drawRect(button, paint);
+                if(fireball != null) {
+                    canvas.drawRect(fireball, paint);
+                }
+                paint.setColor(Color.BLACK);
+                canvas.drawText("Fire", width/2 -200, 100, paint);
+            }
+
             canvas.drawText("Score: " + score, 0, 100, paint);
-            canvas.drawText("Lives: " + lives, 1000, 100, paint);
+            canvas.drawText("Lives: " + lives, 1200, 100, paint);
         }
         else{
             canvas.drawText("Game Over", width/2-100, height/2 + 50, paint);
@@ -186,19 +221,29 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             jumping = 0;  //also player can do jump command again.
         }
 
+        //these movements in the x - direction will be used to obstacle collision check
         if(moving_left){
             playerPoint.x -= 10;
         }
         else if(moving_right){
-            playerPoint.x += 10;   //these movements in the x - direction will be used to obstacle collision check
+            playerPoint.x += 10;
         }
         player.update(playerPoint.x, playerPoint.y);
 
         //behavior of obstacles
-        for(Obstacle obstacle: obstacles) {
-            if(obstacle != null) {
-                if (Rect.intersects(player.getLocation(), obstacle.getLocation())) {
-                    int collisionType = obstacle.playerCollide(player, obstacle.getLocation(), playerPoint);
+        for(int i = 0; i < 10; i++) {
+            if(obstacles[i] != null) {
+                if (Rect.intersects(player.getLocation(), obstacles[i].getLocation())) {
+                    if(obstacles[i] instanceof FireFlower){
+                        FireFlower temp = (FireFlower)obstacles[i];
+                        if(temp.isBroken()){
+                            obstacles[i] = null;
+                            playerState = 1;
+                            continue;
+                        }
+                    }
+
+                    int collisionType = obstacles[i].playerCollide(player, obstacles[i].getLocation(), playerPoint);
                     if (collisionType == 1) {
                         moving_right = false;
                         moving_left = false;
@@ -232,20 +277,67 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             }
         }
 
+        //these movements in the x - direction move player back
         if(moving_left){
             playerPoint.x += 10;
         }
         else if(moving_right){
-            playerPoint.x -= 10;   //these movements in the x - direction will be used to obstacle collision check
+            playerPoint.x -= 10;
         }
         player.update(playerPoint.x, playerPoint.y);
 
+        //behavior of obstacles
         for(Obstacle obstacle: obstacles) {
             if (obstacle != null) {  //if character is supposed to be moving, move the obstacles.
                 if (moving_left) {
                     obstacle.moveRight();
                 } else if (moving_right) {
                     obstacle.moveLeft();
+                }
+            }
+        }
+
+        //behavior of fireball
+        if(fireball != null){
+            int tempx = fireball.left;
+            int tempy = fireball.top;
+
+            if(tempx < width && tempx > 0) {
+                if (fireDirection == 0) {  //fireball's movement by itself
+                    tempx += 20;
+                } else if (fireDirection == 1) {
+                    tempx -= 20;
+                }
+
+                if (moving_right) {  //fireball's movement when factoring in player movement
+                    tempx -= 10;
+                } else if (moving_left) {
+                    tempx += 10;
+                }
+
+                fireball.set(tempx, tempy, tempx + 50, tempy + 50);
+            }
+            else{
+                fireball = null;  //once fireball has reached end of screen, it disappears, and player can shoot another one.
+            }
+
+            for(int i = 0; i < 10; i++) {
+                if(enemies[i] != null) {
+                    if (Rect.intersects(fireball, enemies[i].getLocation())) {
+                        if (enemies[i] instanceof Plant) {
+                            Plant temp = (Plant) enemies[i];
+                            if (temp.getState() == 1 || temp.getState() == 2) {
+                                fireball = null;    //plant can only be killed while its rising or falling.
+                                enemies[i] = null;
+                                score += 100;
+                            }
+                        }
+                        else{
+                            enemies[i] = null; //normal enemies die on simple contact.
+                            fireball = null;
+                            score += 100;
+                        }
+                    }
                 }
             }
         }
@@ -300,5 +392,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 }
             }
         }
+
+        if(gameover){
+            for(int i = 0; i < 10; i++){
+                enemies[i] = null;
+            }
+        }
+
     }
 }

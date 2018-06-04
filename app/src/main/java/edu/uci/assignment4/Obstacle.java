@@ -8,9 +8,9 @@ import android.graphics.Rect;
 
 public class Obstacle implements GameObject{
 
-    private Rect shape;
-    private int x, y, width, height;
-    private Paint paint = new Paint();
+    protected Rect shape;
+    protected int x, y, width, height;
+    protected Paint paint = new Paint();
 
     public Obstacle(){
         shape = new Rect();
@@ -26,7 +26,9 @@ public class Obstacle implements GameObject{
     }
 
     public void setLocation(int x, int y){
-        //does nothing
+        this.x = x;
+        this.y = y;
+        shape.set(x, y, x + width, y + height);
     }
 
     public void moveRight(){
