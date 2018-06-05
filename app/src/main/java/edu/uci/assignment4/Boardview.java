@@ -19,13 +19,16 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private GameObject enemies[] = new GameObject[10];
     private Obstacle obstacles[] = new Obstacle[10];
     private Point playerPoint;           //player coordinates.
-    private int width;                  //width and height of canvas
+    //width and height of canvas
+    private int width;
     private int height;
-    private boolean moving_left = false, moving_right = false, gameover =false;
+    //conditions of player character
+    private boolean moving_left = false, moving_right = false, gameover =false, hurt = false;
     private int jumping = 0, jumpDistance;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
     private int score = 0;
     private int lives = 3;
     private long gameTime;
+    private long hurtTime;
     private Paint paint = new Paint();
 
     private Rect fireball = null;
@@ -42,8 +45,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         thread = new GameThread(getHolder(), this);
 
         player = new Player(c);  //initialize characters
-        //enemies[0] = new Goomba(c);
-        obstacles[0] = new FireFlower(c);
+        enemies[0] = new Plant(c);
+        obstacles[0] = new Mushroom(c);
 
         paint.setColor(Color.BLACK);  //paint for text
         paint.setTextSize(100);
@@ -60,18 +63,21 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         playerPoint = new Point();
         playerPoint.x = width/2;
         playerPoint.y = 300;
+        player.setState(playerState);
 
         button.set(width/2 - 200, 0, width/2 + 200, 100);
 
         holder.unlockCanvasAndPost(c);
 
         for(GameObject enemy: enemies){
-            if(enemy instanceof Goomba){
-                Goomba goomba = (Goomba)enemy;
-                goomba.setLocation(1500, height - goomba.getHeight());
-            } else if (enemy instanceof Plant) {
-                Plant plant = (Plant)enemy;
-                plant.setLocation(1500, height - plant.getPotHeight());
+            if(enemy != null) {
+                if (enemy instanceof Goomba) {
+                    Goomba goomba = (Goomba) enemy;
+                    goomba.setLocation(2000, height - goomba.getHeight());
+                } else if (enemy instanceof Plant) {
+                    Plant plant = (Plant) enemy;
+                    plant.setLocation(2000, height - plant.getPotHeight());
+                }
             }
         }
 
@@ -239,6 +245,16 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                         if(temp.isBroken()){
                             obstacles[i] = null;
                             playerState = 1;
+                            player.setState(playerState);
+                            continue;
+                        }
+                    }
+                    if(obstacles[i] instanceof Mushroom){
+                        Mushroom temp = (Mushroom) obstacles[i];
+                        if(temp.isBroken()){
+                            obstacles[i] = null;
+                            playerState = 2;
+                            player.setState(playerState);
                             continue;
                         }
                     }
@@ -343,55 +359,76 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         }
 
         //behavior of enemy objects
-        for(int i = 0; i < 10; i++) {
-            if(enemies[i] != null) {  //for all enemies.
-                if (moving_right) {
-                    enemies[i].moveLeft();
-                } else if (moving_left) {
-                    enemies[i].moveRight();
+            for (int i = 0; i < 10; i++) {
+                if (enemies[i] != null) {  //for all enemies.
+                    if (moving_right) {
+                        enemies[i].moveLeft();
+                    } else if (moving_left) {
+                        enemies[i].moveRight();
+                    }
                 }
-            }
+                if(!hurt) {  //player can only be affected by enemies while he isnt hurt.
+                    if (enemies[i] instanceof Goomba) {
+                        Goomba goomba = (Goomba) enemies[i];
+                        if (goomba != null) {  //if goomba isnt dead, update goomba
 
-            if(enemies[i] instanceof Goomba) {
-                Goomba goomba = (Goomba)enemies[i];
-                if (goomba != null) {  //if goomba isnt dead, update goomba
+                            goomba.update(playerPoint.x);
 
-                    goomba.update(playerPoint.x);
+                            if (Rect.intersects(player.getLocation(), goomba.getLocation())) {  //check to see if goomba and player will intersect
+                                if (goomba.killedByPlayer(player)) {            //if player and goomba intersect, check to see if goomba dies.
+                                    enemies[i] = null;
+                                    score += 100;
+                                } else {    //if player dies, game is over and must be reset.
+                                    if (playerState == 0) {
+                                        gameover = true;
+                                        lives--;
+                                    } else {
+                                        hurt = true;
+                                        playerState = 0;
+                                        player.setState(playerState);
+                                        hurtTime = System.nanoTime() / 1000000;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-                    if (Rect.intersects(player.getLocation(), goomba.getLocation())) {  //check to see if goomba and player will intersect
-                        if (goomba.killedByPlayer(player)) {            //if player and goomba intersect, check to see if goomba dies.
-                            enemies[i] = null;
-                            score += 100;
-                        } else {    //if player dies, game is over and must be reset.
-                            gameover = true;
-                            lives--;
+                    //behavior of plant object
+                    if (enemies[i] instanceof Plant) {
+                        Plant plant = (Plant) enemies[i];
+                        if (plant != null) {
+                            if (plant.getState() == 3) {
+                                gameTime = System.nanoTime() / 1000000;
+                                plant.update();  //tell plant we have the time it BEGAN to wait.
+                            } else if (plant.getState() == 0) {  //if plant hasnt waited long enough, it isnt updated
+                                if (System.nanoTime() / 1000000 - gameTime >= 5000) {
+                                    plant.update();
+                                }
+                            } else {
+                                plant.update();
+                            }
+
+                            if (Rect.intersects(player.getLocation(), plant.getLocation())) {  //check to see if plant and player will intersect
+                                if (playerState == 0) {
+                                    gameover = true;
+                                    lives--;
+                                } else {
+                                    hurt = true;
+                                    playerState = 0;
+                                    player.setState(playerState);
+                                    hurtTime = System.nanoTime() / 1000000;
+                                }
+                            }
                         }
                     }
                 }
-            }
-
-            //behavior of plant object
-            if(enemies[i] instanceof Plant) {
-                Plant plant = (Plant)enemies[i];
-                if (plant != null) {
-                    if (plant.getState() == 3) {
-                        gameTime = System.nanoTime() / 1000000;
-                        plant.update();  //tell plant we have the time it BEGAN to wait.
-                    } else if (plant.getState() == 0) {  //if plant hasnt waited long enough, it isnt updated
-                        if (System.nanoTime() / 1000000 - gameTime >= 5000) {
-                            plant.update();
-                        }
-                    } else {
-                        plant.update();
-                    }
-
-                    if (Rect.intersects(player.getLocation(), plant.getLocation())) {  //check to see if plant and player will intersect
-                        gameover = true;
-                        lives--;
+                else{
+                    long elapsedTime = System.nanoTime()/1000000 - hurtTime;
+                    if(elapsedTime >= 5000){
+                        hurt = false;  //once five seconds have passed, player is no longer hurt.
                     }
                 }
             }
-        }
 
         if(gameover){
             for(int i = 0; i < 10; i++){
