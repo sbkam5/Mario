@@ -7,17 +7,17 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 
 public class KoopaParatroopa implements GameObject {
-    protected Bitmap winged;
-    protected Bitmap wingless;
-    protected Bitmap shell;
+    protected Bitmap koopa;
     private int x;
     private int y;
     private int width;
     private int height;
+    private int jumph;
+    private int state; //1 means rising, 2 means falling
     private Rect loc;
 
     public KoopaParatroopa(Context c){
-        winged = BitmapFactory.decodeResource(c.getResources(), R.drawable.koopaparatroopa);
+        koopa= BitmapFactory.decodeResource(c.getResources(), R.drawable.koopa);
         x = 500;
         y = 300;
         width = 200;
@@ -61,12 +61,31 @@ public class KoopaParatroopa implements GameObject {
 
     @Override
     public void update(){
+        if (state == 0){
+            state = 1;
+        }
+        else if (state == 1){
+            y -= 10;
+            x += 5;
+            loc.set(x + 25, y, x + 25 + width, y + 25 + height);
+            if ( y == jumph){
+                state = 2;
+            }
+        }
+        else if (state == 2){
+            y += 10;
+            x += 5;
+            loc.set(x+25, y , x+25+width, y+height);
+        }
+        else{
+            state = 0;   //state 3 is the "wait" state.
+        }
 
     }
 
     @Override
     public void draw(Canvas canvas){
-        canvas.drawBitmap(pic, null, loc, null);
+        canvas.drawBitmap(koopa, null, loc, null);
     }
 
 
