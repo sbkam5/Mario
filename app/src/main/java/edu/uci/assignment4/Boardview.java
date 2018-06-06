@@ -143,7 +143,14 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     }
 
     public void setLevelThree(){
-
+        for(int i = 0; i < 10; i++){
+            enemies[i] = null;
+        }
+        for(int i = 0; i < 9; i++){
+            obstacles[i] = null;
+        }
+        obstacles[9] = new Flagpole(context);
+        obstacles[9].setLocation(1500, height - obstacles[9].height);
     }
 
     public void reset(){
@@ -230,8 +237,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         else{  //if it is a gameover, clicking will reset the game.
             if(e.getAction() == MotionEvent.ACTION_DOWN) {
                 gameover = false;
-                if(lives == 0){
-                    level = 1;      //reset everything if player was killed 3 times.
+                lives--;
+                if(lives == 0 || level >= 4){
+                    level = 0;      //reset everything if player was killed 3 times.
                     score = 0;
                     lives = 3;
                 }
@@ -282,7 +290,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         else{
             if(level != 4) {
                 canvas.drawText("Game Over", width / 2 - 100, height / 2 + 50, paint);
-                canvas.drawText("Lives: " + lives, 1200, 100, paint);
+                canvas.drawText("Lives: " + (lives-1), 1200, 100, paint);
             }
             else{
                 canvas.drawText("You Win", width / 2 - 100, height / 2 + 50, paint);
@@ -335,6 +343,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                         FireFlower temp = (FireFlower)obstacles[i];
                         if(temp.isBroken()){
                             obstacles[i] = null;
+                            score += 1000;
                             playerState = 1;
                             player.setState(playerState);
                             continue;
@@ -344,6 +353,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                         Mushroom temp = (Mushroom) obstacles[i];
                         if(temp.isBroken()){
                             obstacles[i] = null;
+                            score += 1000;
                             playerState = 2;
                             player.setState(playerState);
                             continue;
@@ -352,7 +362,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     if(obstacles[i] instanceof Flagpole){
                         level++;
                         reset();
-                        makeLevel(level);
+                        if(level >= 4){
+                            gameover = true;
+                        }
+                        else {
+                            makeLevel(level);
+                        }
                         break;
                     }
 
@@ -478,7 +493,6 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                                 } else {    //if player dies, game is over and must be reset.
                                     if (playerState == 0) {
                                         gameover = true;
-                                        lives--;
                                     } else {
                                         hurt = true;
                                         playerState = 0;
@@ -508,7 +522,6 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                             if (Rect.intersects(player.getLocation(), plant.getLocation())) {  //check to see if plant and player will intersect
                                 if (playerState == 0) {
                                     gameover = true;
-                                    lives--;
                                 } else {
                                     hurt = true;
                                     playerState = 0;
