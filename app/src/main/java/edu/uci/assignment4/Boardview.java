@@ -254,7 +254,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             canvas.drawText("(RIGHT)", width-500, height - 100, paint);
         }
         else if(!gameover) {
-            player.draw(canvas);
+            player.draw(canvas, moving_left, moving_right);
             for(GameObject enemy : enemies){
                 if(enemy != null){
                     enemy.draw(canvas);
