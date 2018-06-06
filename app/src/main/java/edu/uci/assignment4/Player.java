@@ -12,7 +12,7 @@ import android.graphics.Rect;
 
 public class Player implements GameObject {
 
-    protected Bitmap pic;
+    protected Bitmap pic, standPic;
     private int x;
     private int y;
     private int width;
@@ -22,9 +22,10 @@ public class Player implements GameObject {
     private Rect loc;
     private int direction = 0;
     private int state;
+    private boolean standing = true;
 
     public Player(Context context){
-
+        standPic = BitmapFactory.decodeResource(context.getResources(), R.drawable.standing);
         pic = BitmapFactory.decodeResource(context.getResources(), R.drawable.player);
         x = 250;
         y = 250;
@@ -69,6 +70,7 @@ public class Player implements GameObject {
         Matrix matrix = new Matrix();
         matrix.postScale(-1, 1, x, y);
         pic = Bitmap.createBitmap(pic, 0, 0, pic.getWidth(), pic.getHeight(), matrix, true);
+        standPic = Bitmap.createBitmap(standPic, 0, 0, standPic.getWidth(), standPic.getHeight(), matrix, true);
     }
 
     public Rect getLocation(){
@@ -123,6 +125,17 @@ public class Player implements GameObject {
 
     @Override
     public void draw(Canvas canvas){
-        canvas.drawBitmap(pic, null, loc, null);
+        //does nothing
+    }
+
+    public void draw(Canvas canvas, boolean movingLeft, boolean movingRight){
+        Bitmap temp;
+        if(movingLeft == true || movingRight == true){
+            temp = pic;
+        }
+        else{
+            temp = standPic;
+        }
+        canvas.drawBitmap(temp, null, loc, null);
     }
 }
