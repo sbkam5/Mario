@@ -89,9 +89,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setLevelOne(){
         for(int i = 0; i < 10; i++){
-            if(i < 5) {
-                enemies[i] = new Goomba(context);
-                Goomba temp = (Goomba) enemies[i];
+            if(i < 1) {
+                enemies[i] = new KoopaParatroopa(context);
+                KoopaParatroopa temp = (KoopaParatroopa) enemies[i];
                 temp.setLocation(2000 * (i + 1), height - temp.getHeight());
             }
             else{
@@ -514,6 +514,39 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                                     playerState = 0;
                                     player.setState(playerState);
                                     hurtTime = System.nanoTime() / 1000000;
+                                }
+                            }
+                        }
+                    }
+                    //behavior of koopa object
+                    if (enemies[i] instanceof KoopaParatroopa) {
+                        KoopaParatroopa koopa = (KoopaParatroopa) enemies[i];
+                        if (koopa != null) {
+                            if (koopa.getJump() == 1) {
+                                gameTime = System.nanoTime() / 1000000;
+                                koopa.update(height);  //tell plant we have the time it BEGAN to wait.
+                            } else if (koopa.getJump() == 2) {  //if plant hasnt waited long enough, it isnt updated
+                                if (System.nanoTime() / 1000000 - gameTime >= 1000) {
+                                    koopa.update(height);
+                                }
+                            } else {
+                                koopa.update(height);
+                            }
+
+                            if (Rect.intersects(player.getLocation(), koopa.getLocation())) {  //check to see if plant and player will intersect
+                                if (koopa.killedByPlayer(player)) {            //if player and koopa intersect, check to see if koopa dies.
+                                    enemies[i] = null;
+                                    score += 100;
+                                } else {    //if player dies, game is over and must be reset.
+                                    if (playerState == 0) {
+                                        gameover = true;
+                                        lives--;
+                                    } else {
+                                        hurt = true;
+                                        playerState = 0;
+                                        player.setState(playerState);
+                                        hurtTime = System.nanoTime() / 1000000;
+                                    }
                                 }
                             }
                         }

@@ -13,7 +13,7 @@ public class KoopaParatroopa implements GameObject {
     private int width;
     private int height;
     private int jump = 1;
-    private int jumph = 1000;
+    private int jumph;
     private Rect loc;
 
     public KoopaParatroopa(Context c){
@@ -44,25 +44,26 @@ public class KoopaParatroopa implements GameObject {
     }
 
     public void moveLeft(){
-        x -= 10;
+        x -= 100;
         loc.set(x, y, x + width, y + height);
     }
 
     public void moveRight(){
-        x += 10;
+        x += 100;
         loc.set(x, y, x + width, y + height);
     }
 
-    public void update(int player_x){
+    public void update(int height){
+        jumph = height/2;
         if (jump == 1) {
-            y -= 10;
+            y -= 5;
             moveLeft();
             if (y <= jumph) {
                 jump = 2;
             }
         }
         else if (jump == 2){
-            y += 10;
+            y += 5;
             moveLeft();
             jump = 1;
         }
