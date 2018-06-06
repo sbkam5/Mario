@@ -37,6 +37,16 @@ public class Goomba implements GameObject {
         loc.set(x, y, x + width, y + height);
     }
 
+    public void moveLeft(){
+        x -= 10;
+        loc.set(x, y, x + width, y + height);
+    }
+
+    public void moveRight(){
+        x += 10;
+        loc.set(x, y, x + width, y + height);
+    }
+
     public void update(int player_x){
         if(x < player_x){
             x += 5;
@@ -44,7 +54,7 @@ public class Goomba implements GameObject {
         else{
             x -= 5;
         }
-        loc = new Rect(x, y, x + width, y + height);
+        loc.set(x, y, x + width, y + height);
     }
 
     public boolean killedByPlayer(Player p){

@@ -5,7 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 
 public class Player implements GameObject {
@@ -16,6 +18,7 @@ public class Player implements GameObject {
     private int width;
     private int height;
     private Rect loc;
+    private int direction = 0;
 
     public Player(Context context){
 
@@ -25,6 +28,34 @@ public class Player implements GameObject {
         width = 200;
         height = 200;
         loc = new Rect(x, y, x + width, y + height);
+    }
+
+    public void setLocation(int x, int y){
+        this.x = x;
+        this.y = y;
+        loc.set(x, y, x + width, y + height);
+    }
+
+    public void moveLeft(){
+        //does nothing
+    }
+
+    public void moveRight(){
+        //does nothing
+    }
+
+    public void setDirection(int x){
+        direction = x;
+    }
+
+    public int getDirection(){
+        return direction;
+    }
+
+    public void flip(int x, int y){
+        Matrix matrix = new Matrix();
+        matrix.postScale(-1, 1, x, y);
+        pic = Bitmap.createBitmap(pic, 0, 0, pic.getWidth(), pic.getHeight(), matrix, true);
     }
 
     public Rect getLocation(){
