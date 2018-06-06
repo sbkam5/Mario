@@ -6,22 +6,22 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
-/*public class KoopaParatroopa implements GameObject {
-    protected Bitmap winged;
-    protected Bitmap wingless;
-    protected Bitmap shell;
+public class KoopaParatroopa implements GameObject {
+    protected Bitmap koopa;
     private int x;
     private int y;
     private int width;
     private int height;
+    private int jump = 1;
+    private int jumph = 1000;
     private Rect loc;
 
     public KoopaParatroopa(Context c){
-        winged = BitmapFactory.decodeResource(c.getResources(), R.drawable.koopaparatroopa);
+        koopa = BitmapFactory.decodeResource(c.getResources(), R.drawable.koopaparatroopa);
         x = 500;
         y = 300;
         width = 200;
-        height = 300;
+        height = 200;
         loc = new Rect(x, y, x + width, y + height);
     }
 
@@ -33,17 +33,38 @@ import android.graphics.Rect;
         return loc;
     }
 
+    public int getJump(){
+        return jump;
+    }
+
     public void setLocation(int x, int y){
         this.x = x;
         this.y = y;
         loc.set(x, y, x + width, y + height);
     }
 
-    public void update(int player_x){
-        for (int i = 0; i < 100; i++){
-            if (y == 300){
+    public void moveLeft(){
+        x -= 10;
+        loc.set(x, y, x + width, y + height);
+    }
 
+    public void moveRight(){
+        x += 10;
+        loc.set(x, y, x + width, y + height);
+    }
+
+    public void update(int player_x){
+        if (jump == 1) {
+            y -= 10;
+            moveLeft();
+            if (y <= jumph) {
+                jump = 2;
             }
+        }
+        else if (jump == 2){
+            y += 10;
+            moveLeft();
+            jump = 1;
         }
     }
 
@@ -66,9 +87,9 @@ import android.graphics.Rect;
 
     @Override
     public void draw(Canvas canvas){
-        canvas.drawBitmap(pic, null, loc, null);
+        canvas.drawBitmap(koopa, null, loc, null);
     }
 
 
 
-}*/
+}

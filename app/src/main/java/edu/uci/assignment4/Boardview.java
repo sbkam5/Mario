@@ -42,8 +42,8 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         thread = new GameThread(getHolder(), this);
 
         player = new Player(c);  //initialize characters
-        //enemies[0] = new Goomba(c);
-        obstacles[0] = new FireFlower(c);
+        enemies[0] = new KoopaParatroopa(c);
+        obstacles[0] = new Coin(c);
 
         paint.setColor(Color.BLACK);  //paint for text
         paint.setTextSize(100);
@@ -72,6 +72,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             } else if (enemy instanceof Plant) {
                 Plant plant = (Plant)enemy;
                 plant.setLocation(1500, height - plant.getPotHeight());
+            } else if (enemy instanceof KoopaParatroopa){
+                KoopaParatroopa koopa = (KoopaParatroopa)enemy;
+                koopa.setLocation(1500, height - koopa.getHeight());
             }
         }
 
@@ -242,6 +245,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                             continue;
                         }
                     }
+                    else if (obstacles[i] instanceof Coin){
+                        Coin coin = (Coin)obstacles[i];
+                        score += 100;
+                        obstacles[i] = null;
+                        continue;
+                    }
 
                     int collisionType = obstacles[i].playerCollide(player, obstacles[i].getLocation(), playerPoint);
                     if (collisionType == 1) {
@@ -386,6 +395,28 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     }
 
                     if (Rect.intersects(player.getLocation(), plant.getLocation())) {  //check to see if plant and player will intersect
+                        gameover = true;
+                        lives--;
+                    }
+                }
+            }
+
+            //behavior of koopa object
+            if(enemies[i] instanceof KoopaParatroopa) {
+                KoopaParatroopa koopa = (KoopaParatroopa)enemies[i];
+                if (koopa != null) {
+                    if (koopa.getJump() == 1) {
+                        gameTime = System.nanoTime() / 1000000;
+                        koopa.update();  //tell plant we have the time it BEGAN to wait.
+                    } else if (koopa.getJump() == 2) {  //if plant hasnt waited long enough, it isnt updated
+                        if (System.nanoTime() / 1000000 - gameTime >= 5000) {
+                            koopa.update();
+                        }
+                    } else {
+                        koopa.update();
+                    }
+
+                    if (Rect.intersects(player.getLocation(), koopa.getLocation())) {  //check to see if plant and player will intersect
                         gameover = true;
                         lives--;
                     }
