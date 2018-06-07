@@ -44,28 +44,34 @@ public class KoopaParatroopa implements GameObject {
     }
 
     public void moveLeft(){
-        x -= 100;
+        x -= 10;
         loc.set(x, y, x + width, y + height);
     }
 
     public void moveRight(){
-        x += 100;
+        x += 10;
         loc.set(x, y, x + width, y + height);
     }
 
     public void update(int height){
         jumph = height/2;
+        x -= 10;
+        if (x <= -300){
+            x = -300;
+        }
         if (jump == 1) {
-            y -= 5;
-            moveLeft();
+            y -= 10;
+            setLocation(x, y);
             if (y <= jumph) {
                 jump = 2;
             }
         }
         else if (jump == 2){
-            y += 5;
-            moveLeft();
-            jump = 1;
+            y += 10;
+            setLocation(x,y);
+            if (y >= height - this.height){
+                jump = 1;
+            }
         }
     }
 

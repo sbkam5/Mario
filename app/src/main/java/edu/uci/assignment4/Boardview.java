@@ -17,7 +17,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     private Player player;          //characters
     private int playerState = 0;  //0 = normal mario, 1 = fire mario, 2 = super mario
     private GameObject enemies[] = new GameObject[10];
-    private Obstacle obstacles[] = new Obstacle[10];
+    private Obstacle obstacles[] = new Obstacle[20];
     private Point playerPoint;           //player coordinates.
     //width and height of canvas
     private int width;
@@ -25,7 +25,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
     //conditions of player character
     private boolean moving_left = false, moving_right = false, gameover =false, hurt = false;
     private int jumping = 0, jumpDistance;    //0 means not jumping, 1 means rising during a jump, 2 means falling from a jump.
-    private int score = 0;
+    private int score = 0, init_score = 0;
     private int lives = 3;
     private long gameTime;
     private long hurtTime;
@@ -89,9 +89,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setLevelOne(){
         for(int i = 0; i < 10; i++){
-            if(i < 1) {
-                enemies[i] = new KoopaParatroopa(context);
-                KoopaParatroopa temp = (KoopaParatroopa) enemies[i];
+            if(i < 5) {
+                enemies[i] = new Goomba(context);
+                Goomba temp = (Goomba) enemies[i];
                 temp.setLocation(2000 * (i + 1), height - temp.getHeight());
             }
             else{
@@ -110,6 +110,16 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         obstacles[3].setShape(5000, 600, 1000, 50);
 
         obstacles[0].setLocation(10000, height - obstacles[0].height);
+
+        for(int i = 4; i < 10; i++){
+            obstacles[i] = new Coin(context);
+            obstacles[i].setLocation(1000 * (i + 1), height - obstacles[i].height);
+        }
+
+        for(int i = 11; i < 16; i++){
+            obstacles[i] = new Coin(context);
+            obstacles[i].setLocation(200 * (i + 1), height/2);
+        }
     }
 
     public void setLevelTwo(){
@@ -123,6 +133,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 enemies[i] = new Plant(context);
                 Plant temp = (Plant)enemies[i];
                 temp.setLocation(2000 * (i + 1), height - temp.getPotHeight());
+            }
+            else if (i < 6){
+                enemies[i] = new Goomba(context);
+                Goomba temp = (Goomba) enemies[i];
+                temp.setLocation(2000 * (i + 1), height - temp.getHeight());
             }
             else{
                 enemies[i] = null;
@@ -139,7 +154,19 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         obstacles[3] = new FireFlower(context);
         obstacles[3].setLocation(1500, 200);
 
+        obstacles[4] = new Obstacle();
+        obstacles[4].setShape(6500, 600, 1000, 50);
+
         obstacles[0].setLocation(10000, height - obstacles[0].height);
+
+        for (int i = 5; i < 10; i++){
+            obstacles[i] = new Coin(context);
+            obstacles[i].setLocation(1000 * (i + 1)/2, height/2);
+        }
+        for (int i = 10; i < 16; i++){
+            obstacles[i] = new Coin(context);
+            obstacles[i].setLocation(1000 * (i + 1)/2, height - obstacles[i].height);
+        }
     }
 
     public void setLevelThree(){
@@ -238,9 +265,11 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             if(e.getAction() == MotionEvent.ACTION_DOWN) {
                 gameover = false;
                 lives--;
+                score = init_score;
                 if(lives == 0 || level >= 4){
                     level = 0;      //reset everything if player was killed 3 times.
                     score = 0;
+                    init_score = 0;
                     lives = 3;
                 }
             }
@@ -336,7 +365,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         player.update(playerPoint.x, playerPoint.y);
 
         //behavior of obstacles
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < 20; i++) {
             if(obstacles[i] != null) {
                 if (Rect.intersects(player.getLocation(), obstacles[i].getLocation())) {
                     if(obstacles[i] instanceof FireFlower){
@@ -359,8 +388,16 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                             continue;
                         }
                     }
+
+                    if(obstacles[i] instanceof Coin){
+                        Coin temp = (Coin) obstacles[i];
+                        obstacles[i] = null;
+                        score += 100;
+                        continue;
+                    }
                     if(obstacles[i] instanceof Flagpole){
                         level++;
+                        init_score = score;
                         reset();
                         if(level >= 4){
                             gameover = true;
@@ -535,16 +572,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     if (enemies[i] instanceof KoopaParatroopa) {
                         KoopaParatroopa koopa = (KoopaParatroopa) enemies[i];
                         if (koopa != null) {
-                            if (koopa.getJump() == 1) {
-                                gameTime = System.nanoTime() / 1000000;
-                                koopa.update(height);  //tell plant we have the time it BEGAN to wait.
-                            } else if (koopa.getJump() == 2) {  //if plant hasnt waited long enough, it isnt updated
-                                if (System.nanoTime() / 1000000 - gameTime >= 1000) {
-                                    koopa.update(height);
-                                }
-                            } else {
-                                koopa.update(height);
-                            }
+                            koopa.update(height);
 
                             if (Rect.intersects(player.getLocation(), koopa.getLocation())) {  //check to see if plant and player will intersect
                                 if (koopa.killedByPlayer(player)) {            //if player and koopa intersect, check to see if koopa dies.
@@ -553,7 +581,6 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                                 } else {    //if player dies, game is over and must be reset.
                                     if (playerState == 0) {
                                         gameover = true;
-                                        lives--;
                                     } else {
                                         hurt = true;
                                         playerState = 0;

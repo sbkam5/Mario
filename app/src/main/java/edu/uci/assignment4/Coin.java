@@ -19,6 +19,6 @@ public class Coin extends Obstacle{
     }
 
     public void draw(Canvas canvas){
-            canvas.drawRect(shape, paint);  //if player hasnt broken contrainer, draw the container
+            canvas.drawBitmap(coin, null, shape, null);  //if player hasnt broken contrainer, draw the container
     }
 }
