@@ -295,10 +295,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         else{  //if it is a gameover, clicking will reset the game.
             if(e.getAction() == MotionEvent.ACTION_DOWN) {
                 gameover = false;
+                playerState = 0;
+                player.setState(playerState);
                 lives--;
                 score = init_score;
                 if(lives == 0 || level >= 4){
-                    level = 0;      //reset everything if player was killed 3 times.
+                    level = 0;      //reset everything if player was killed 3 times, or won the whole game.
                     score = 0;
                     init_score = 0;
                     lives = 3;
