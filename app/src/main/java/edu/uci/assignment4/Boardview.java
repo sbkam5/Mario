@@ -89,7 +89,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setLevelOne(){
         for(int i = 0; i < 10; i++){
-            if(i < 5) {
+            if(i < 7) {
                 enemies[i] = new Goomba(context);
                 Goomba temp = (Goomba) enemies[i];
                 temp.setLocation(2000 * (i + 1), height - temp.getHeight());
@@ -116,7 +116,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
             obstacles[i].setLocation(1000 * (i + 1), height - obstacles[i].height);
         }
 
-        for(int i = 11; i < 16; i++){
+        for(int i = 11; i < 15; i++){
             obstacles[i] = new Coin(context);
             obstacles[i].setLocation(200 * (i + 1), height/2);
         }
@@ -165,19 +165,50 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
         }
         for (int i = 10; i < 16; i++){
             obstacles[i] = new Coin(context);
-            obstacles[i].setLocation(1000 * (i + 1)/2, height - obstacles[i].height);
+            obstacles[i].setLocation(1000 * (i + 1)/3, height - obstacles[i].height);
         }
     }
 
     public void setLevelThree(){
         for(int i = 0; i < 10; i++){
-            enemies[i] = null;
+            if(i < 6){
+                enemies[i] = new KoopaParatroopa(context);
+                KoopaParatroopa temp = (KoopaParatroopa)enemies[i];
+                temp.setLocation(1500 * (i + 1), height - temp.getHeight());
+            }
+            else if(i < 9){
+                enemies[i] = new Plant(context);
+                Plant temp = (Plant)enemies[i];
+                temp.setLocation(2000 * (i + 1)/2, height - temp.getPotHeight());
+            }
+            else{
+                enemies[i] = null;
+            }
         }
-        for(int i = 0; i < 9; i++){
-            obstacles[i] = null;
+        obstacles[0] = new Obstacle();
+        obstacles[0].setShape(1000, 600, 500, 50);
+
+        obstacles[1] = new Mushroom(context);
+        obstacles[1].setLocation(5000, 600);
+
+        for (int i = 2; i < 5; i++){
+            obstacles[i] = new Coin(context);
+            obstacles[i].setLocation(1500 * (i + 1)/5, 450);
         }
-        obstacles[9] = new Flagpole(context);
-        obstacles[9].setLocation(1500, height - obstacles[9].height);
+        obstacles[5] = new Obstacle();
+        obstacles[5].setShape(2000, 400, 600, 50);
+
+        obstacles[6] = new Obstacle();
+        obstacles[6].setShape(7500, 600, 300, 50);
+
+        for (int i = 7; i < 11; i++){
+            obstacles[i] = new Coin (context);
+            obstacles[i].setLocation(7000 * (i + 1)/10, 500);
+        }
+
+        obstacles[12] = new Flagpole(context);
+        obstacles[12].setLocation(10000, height - obstacles[12].height);
+
     }
 
     public void reset(){
