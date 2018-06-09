@@ -171,12 +171,12 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
 
     public void setLevelThree(){
         for(int i = 0; i < 10; i++){
-            if(i < 6){
+            if(i < 2){
                 enemies[i] = new KoopaParatroopa(context);
                 KoopaParatroopa temp = (KoopaParatroopa)enemies[i];
-                temp.setLocation(1500 * (i + 1), height - temp.getHeight());
+                temp.setLocation(4000 * (i + 1), height - temp.getHeight());
             }
-            else if(i < 9){
+            else if(i >= 6 && i < 9){
                 enemies[i] = new Plant(context);
                 Plant temp = (Plant)enemies[i];
                 temp.setLocation(2000 * (i + 1)/2, height - temp.getPotHeight());
@@ -288,7 +288,7 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                 }
                 else{
                     level++;
-                    setLevelOne();
+                    makeLevel(level);
                 }
             }
         }
@@ -605,7 +605,9 @@ public class Boardview extends SurfaceView implements SurfaceHolder.Callback{
                     if (enemies[i] instanceof KoopaParatroopa) {
                         KoopaParatroopa koopa = (KoopaParatroopa) enemies[i];
                         if (koopa != null) {
-                            koopa.update(height);
+                            if(koopa.update(height)){
+                                enemies[i] = null;
+                            }
 
                             if (Rect.intersects(player.getLocation(), koopa.getLocation())) {  //check to see if plant and player will intersect
                                 if (koopa.killedByPlayer(player)) {            //if player and koopa intersect, check to see if koopa dies.

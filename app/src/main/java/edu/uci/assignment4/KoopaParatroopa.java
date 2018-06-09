@@ -53,11 +53,11 @@ public class KoopaParatroopa implements GameObject {
         loc.set(x, y, x + width, y + height);
     }
 
-    public void update(int height){
+    public boolean update(int height){
         jumph = height/2;
         x -= 10;
         if (x <= -300){
-            x = -300;
+            return true;
         }
         if (jump == 1) {
             y -= 10;
@@ -73,6 +73,7 @@ public class KoopaParatroopa implements GameObject {
                 jump = 1;
             }
         }
+        return false;
     }
 
 
